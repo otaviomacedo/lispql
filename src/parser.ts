@@ -7,19 +7,19 @@ class Expressions {
         const value = head.value;
 
         if (head.type === TokenType.IDENTIFIER) {
-            if (["=", ">", "<", ">=", "<=", "!="].includes(head.value)) {
-                return Comparison.create(head.value, params);
-            } else if (head.value === "and") {
+            if (["=", ">", "<", ">=", "<=", "!="].includes(value)) {
+                return Comparison.create(value, params);
+            } else if (value === "and") {
                 return new Conjunction(params);
-            } else if (head.value === "or") {
+            } else if (value === "or") {
                 return new Disjunction(params);
-            } else if (head.value === "not") {
+            } else if (value === "not") {
                 return new Negation(params);
             } else {
-                return new Variable(head.value);
+                return new Variable(value);
             }    
         } else {
-            return new Constant(JSON.parse(head.value));
+            return new Constant(JSON.parse(value));
         }
     }
 }

@@ -53,17 +53,8 @@ describe("Parser", () => {
       expect(() => Parser.parse('(not "foo")').evaluate({a: 1})).toThrow();
     });
 
-
-  });
-  
+    it("Comparing more than two values", () => {
+      expect(() => Parser.parse('(> a 0 1)').evaluate({a: 1})).toThrow();
+    });
+  });  
 });
-
-// describe("Lexer", () => {
-//   it("foo", () => {
-//     const lexer = new Lexer("(= x 0)");
-//     while(lexer.hasNext()) {
-//       console.log(lexer.currentToken);
-//       lexer.moveForward();
-//     }
-//   });
-// });
