@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "outDir": "./output",
+        "target": "ES2016"
+    },
+    "include": [
+        "./src",
+        "./test"
+    ],
+    "exclude": [],
+}
