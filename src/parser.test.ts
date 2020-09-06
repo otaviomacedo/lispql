@@ -56,5 +56,10 @@ describe("Parser", () => {
     it("Comparing more than two values", () => {
       expect(() => Parser.parse('(> a 0 1)').evaluate({a: 1})).toThrow();
     });
+
+    it("Method call", () => {
+      const expression = Parser.parse('(includes name "Doe")');
+      expect(expression.evaluate({name: "John Doe"})).toBe(true);
+    });
   });  
 });

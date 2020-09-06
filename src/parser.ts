@@ -15,9 +15,12 @@ class Expressions {
                 return new Disjunction(params);
             } else if (value === "not") {
                 return new Negation(params);
-            } else {
+            } else if (params == null || params.length === 0) {
                 return new Variable(value);
-            }    
+            } else {
+                // Assuming that any identifier at the beginning of a list is a method call
+                return new MethodCall(value, params);
+            }
         } else {
             return new Constant(JSON.parse(value));
         }
@@ -55,6 +58,15 @@ class Comparison implements Expression {
     evaluate(obj: any) {
         const result = this.operator(this.terms[0].evaluate(obj), this.terms[1].evaluate(obj));
         return result;
+    }
+}
+
+class MethodCall implements Expression {
+    constructor(private readonly name: string, private readonly terms: Expression[]) {}
+
+    evaluate(obj?: any) {
+        const target = this.terms[0].evaluate(obj);
+        return target[this.name](this.terms.slice(1).map(t => t.evaluate(obj)));
     }
 }
 
