@@ -66,7 +66,7 @@ class MethodCall implements Expression {
 
     evaluate(obj?: any) {
         const target = this.terms[0].evaluate(obj);
-        return target[this.name](this.terms.slice(1).map(t => t.evaluate(obj)));
+        return target[this.name].apply(target, this.terms.slice(1).map(t => t.evaluate(obj)));
     }
 }
 
@@ -74,17 +74,13 @@ class Conjunction implements Expression {
     constructor(private readonly terms: Expression[]) {}
 
     evaluate(obj?: any) {
-        return this.terms.reduce((e1: Expression, e2: Expression) => {
-            const a = e1.evaluate(obj);
-            const b = e2.evaluate(obj);
-            
-            if (typeof a === 'boolean' && typeof b === 'boolean') {
-                return e1.evaluate(obj) && e2.evaluate(obj);
-            } else {
-                // TODO Better error message
-                throw new Error("Queries must evaluate to boolean");
-            }
-        });
+        const evaluated = this.terms.map(term => term.evaluate(obj));
+        if (evaluated.every(v => typeof v === 'boolean')) {
+            return evaluated.reduce((a, b) => a && b);
+        } else {
+            // TODO Better error message
+            throw new Error("Logical expression must evaluate to boolean")
+        }
     }
 }
 
@@ -92,17 +88,13 @@ class Disjunction implements Expression {
     constructor(private readonly terms: Expression[]) {}
 
     evaluate(obj?: any) {
-        return this.terms.reduce((e1: Expression, e2: Expression) => {
-            const a = e1.evaluate(obj);
-            const b = e2.evaluate(obj);
-            
-            if (typeof a === 'boolean' && typeof b === 'boolean') {
-                return e1.evaluate(obj) || e2.evaluate(obj);
-            } else {
-                // TODO Better error message
-                throw new Error("Queries must evaluate to boolean");
-            }
-        });
+        const evaluated = this.terms.map(term => term.evaluate(obj));
+        if (evaluated.every(v => typeof v === 'boolean')) {
+            return evaluated.reduce((a, b) => a || b);
+        } else {
+            // TODO Better error message
+            throw new Error("Logical expression must evaluate to boolean")
+        }
     }
 }
 
@@ -138,12 +130,12 @@ class Variable implements Expression {
 }
 
 enum TokenType {
-    OPEN_PARENTHESIS = 0,
-    CLOSE_PARENTHESIS = 1,
-    IDENTIFIER = 2,
-    STRING = 3,
-    NUMBER = 4,
-    KEYWORD = 5
+    OPEN_PARENTHESIS = "(",
+    CLOSE_PARENTHESIS = ")",
+    IDENTIFIER = "ID",
+    STRING = "ST",
+    NUMBER = "NU",
+    KEYWORD = "KW"
 }
 
 interface Token {
@@ -151,7 +143,7 @@ interface Token {
     value?: string;
 }
 
-export class Lexer {
+class Lexer {
     private static MATCHERS = [
         {
             type: TokenType.OPEN_PARENTHESIS,
@@ -167,7 +159,7 @@ export class Lexer {
         },
         {
             type: TokenType.KEYWORD,
-            regex: /^true|false|null/
+            regex: /^(true|false|null)/
         },
         {
             type: TokenType.NUMBER,
@@ -175,7 +167,7 @@ export class Lexer {
         },
         {
             type: TokenType.IDENTIFIER,
-            regex: /^\S+/
+            regex: /\S+(?<![\)\(])/
         }
     ];
     private _currentToken: Token;
@@ -185,6 +177,7 @@ export class Lexer {
     } 
 
     private nextToken(): Token {
+        const q = this.query;
         this.query = this.query.trim();
 
         let result: Token;
@@ -211,7 +204,7 @@ export class Lexer {
         }
     }
 
-    get currentToken() {
+    get currentToken(): Token {
         return this._currentToken;
     }
 

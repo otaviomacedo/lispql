@@ -1,37 +1,60 @@
-import { Lexer, Parser } from "./parser";
+import { Parser } from "./parser";
+import axios from "axios";
 
 describe("Parser", () => {
   describe("parsing", () => {
-    it("Well-formed query", () => {
+    it("Well-formed query, ending with number", () => {
       expect(Parser.parse("(= x 0)")).not.toBeNull();
     });
-  
+
+    it("Well-formed query, ending with keyword", () => {
+      expect(Parser.parse("(= x true)")).not.toBeNull();
+      expect(Parser.parse("(= x false)")).not.toBeNull();
+      expect(Parser.parse("(= x null)")).not.toBeNull();
+    });
+
+    it("Well-formed query, ending with string", () => {
+      expect(Parser.parse('(= x "foo")')).not.toBeNull();
+    });
+
+    it("Well-formed query, ending with identifier", () => {
+      expect(Parser.parse('(= "foo" x)')).not.toBeNull();
+    });
+
+    it("Multi line query", () => {
+      const query =
+        `(and
+         (> x 0)
+         (< y 0))`;
+      expect(Parser.parse(query)).not.toBeNull();
+    });
+
     // TODO Assert good error messages
     it("Missing closing parentheses", () => {
       expect(() => Parser.parse("(= x 0")).toThrow();
     });
-  
+
     it("Missing opening parentheses", () => {
       expect(() => Parser.parse("= x 0)")).toThrow();
     });
-  
+
     it("Expression starting with a number", () => {
       expect(() => Parser.parse("(1 2 3 4)")).toThrow();
     });
-  
+
     it("Expression starting with a string", () => {
       expect(() => Parser.parse('("foo" 2 3 4)')).toThrow();
     });
-  
+
     it("Expression starting with a keyword", () => {
       expect(() => Parser.parse('(true 2 3 4)')).toThrow();
-    });  
+    });
   });
 
   describe("evaluation", () => {
     it("Simple query", () => {
-      const positiveX = {x: 1, y: 99};
-      const negativeX = {x: -1, y: 99};
+      const positiveX = { x: 1, y: 99 };
+      const negativeX = { x: -1, y: 99 };
 
       const expression = Parser.parse("(> x 0)");
       expect(expression.evaluate(positiveX)).toBe(true);
@@ -39,8 +62,8 @@ describe("Parser", () => {
     });
 
     it("Nested query", () => {
-      const positive = {x: 1, y: 99};
-      const negative = {x: -1, y: -99};
+      const positive = { x: 1, y: 99 };
+      const negative = { x: -1, y: -99 };
 
       const expression = Parser.parse("(and (> x 0) (not (< y 0)))");
       expect(expression.evaluate(positive)).toBe(true);
@@ -48,18 +71,48 @@ describe("Parser", () => {
     });
 
     it("Non-boolean results", () => {
-      expect(() => Parser.parse('(and (> x 0) "foo")').evaluate({a: 1})).toThrow();
-      expect(() => Parser.parse('(or (> x 0) "foo")').evaluate({a: 1})).toThrow();
-      expect(() => Parser.parse('(not "foo")').evaluate({a: 1})).toThrow();
+      expect(() => Parser.parse('(and (> x 0) "foo")').evaluate({ a: 1 })).toThrow();
+      expect(() => Parser.parse('(or (> x 0) "foo")').evaluate({ a: 1 })).toThrow();
+      expect(() => Parser.parse('(not "foo")').evaluate({ a: 1 })).toThrow();
     });
 
     it("Comparing more than two values", () => {
-      expect(() => Parser.parse('(> a 0 1)').evaluate({a: 1})).toThrow();
+      expect(() => Parser.parse('(> a 0 1)').evaluate({ a: 1 })).toThrow();
     });
 
     it("Method call", () => {
       const expression = Parser.parse('(includes name "Doe")');
-      expect(expression.evaluate({name: "John Doe"})).toBe(true);
+      expect(expression.evaluate({ name: "John Doe" })).toBe(true);
     });
-  });  
+
+    it("aasdasdasd", () => {
+      const expression = Parser.parse('(substring name 1 4)');
+      expect(expression.evaluate({ name: "Schumpeter" })).toBe("chu");
+    });
+
+    it("Complex query", () => {
+      const expression = Parser.parse(`
+        (not
+          (or
+          (and
+            (startsWith name "E")
+            (startsWith surname "M")
+            (= gender "K"))
+          (endsWith email ".com")
+          (not (= age 32))))       
+      `);
+
+      const user = {
+        "id": 0,
+        "name": "Esmiye", 
+        "surname": "Tefekk\u00fcl", 
+        "email": "esmiye@tefekk\u00fcl.com", 
+        "username": "tefekk\u00fcl_esmiye", 
+        "gender": "K",
+        "age": 32
+      };
+
+      expect(expression.evaluate(user)).toBe(false);
+    })
+  });
 });
