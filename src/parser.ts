@@ -32,10 +32,10 @@ class Comparison implements Expression {
 
     constructor(private readonly str: string, private readonly terms: Expression[]) {
         if (terms.length !== 2) {
-            throw new Error(`Comparisons should have only 2 terms: ${terms}`);
+            throw new Error(`Comparisons should have only 2 terms`);
         }
 
-        this.operator = Comparison.operators[str];
+        this.operator = Comparison.operators[str]; 
     }
 
     private static operators = {
@@ -79,7 +79,7 @@ class Conjunction implements Expression {
             return evaluated.reduce((a, b) => a && b);
         } else {
             // TODO Better error message
-            throw new Error("Logical expression must evaluate to boolean")
+            throw new Error("Logical expressions must evaluate to boolean")
         }
     }
 }
@@ -93,7 +93,7 @@ class Disjunction implements Expression {
             return evaluated.reduce((a, b) => a || b);
         } else {
             // TODO Better error message
-            throw new Error("Logical expression must evaluate to boolean")
+            throw new Error("Logical expressions must evaluate to boolean")
         }
     }
 }
@@ -108,7 +108,7 @@ class Negation implements Expression {
             return !a;
         } else {
             // TODO Better error message
-            throw new Error("Queries must evaluate to boolean");
+            throw new Error("Logical expressions must evaluate to boolean");
         }
     }
 }
@@ -200,7 +200,7 @@ class Lexer {
         if (this.hasNext()) {
             this._currentToken = this.nextToken();
         } else {
-            throw new Error("Reached end of expression");
+            throw new Error("Missing closing parenthesis");
         }
     }
 
@@ -217,11 +217,17 @@ export class Parser {
     static parse(input: string): Expression {
         const lexer = new Lexer(input);
         const wrapper = new Wrapper(lexer)
-        return wrapper.parseExpression();
+        const result = wrapper.parseExpression();
+
+        if (lexer.hasNext()) {
+            throw new Error("Missing opening parenthesis");
+        }
+        return result;
     }
 }
 
 class Wrapper {
+    private level = 0;
     constructor(private readonly lexer: Lexer) {}
 
     parseExpressions() : Expression[] {
@@ -241,14 +247,20 @@ class Wrapper {
             token.type === TokenType.STRING || 
             token.type === TokenType.KEYWORD ||
             token.type === TokenType.NUMBER) {
+            
+            if (this.level < 1) {
+                throw new Error("Missing opening parenthesis");
+            }
             return Expressions.create(token);
         } 
         else if (token.type === TokenType.OPEN_PARENTHESIS) {
+            this.level++;
+
             this.lexer.moveForward();
             const head = this.lexer.currentToken;
 
             if (head.type !== TokenType.IDENTIFIER) {
-                throw new Error(`Expected name, got ${head.value}`);
+                throw new Error(`Expected name, got '${head.value}'`);
             }
             const terms: Expression[] = [];
             this.lexer.moveForward();
@@ -258,6 +270,7 @@ class Wrapper {
                 this.lexer.moveForward();
             }
 
+            this.level--;
             return Expressions.create(head, terms);
         } 
         else {

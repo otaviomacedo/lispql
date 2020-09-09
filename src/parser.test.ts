@@ -1,5 +1,4 @@
 import { Parser } from "./parser";
-import axios from "axios";
 
 describe("Parser", () => {
   describe("parsing", () => {
@@ -31,23 +30,28 @@ describe("Parser", () => {
 
     // TODO Assert good error messages
     it("Missing closing parentheses", () => {
-      expect(() => Parser.parse("(= x 0")).toThrow();
+      expect(() => Parser.parse("(= x 0")).toThrow("Missing closing parenthesis");
     });
 
     it("Missing opening parentheses", () => {
-      expect(() => Parser.parse("= x 0)")).toThrow();
+      expect(() => Parser.parse("= x 0)")).toThrow("Missing opening parenthesis");
+      expect(() => Parser.parse("(= x 0))")).toThrow("Missing opening parenthesis");
+    });
+
+    it("Empty expression", () => {
+      expect(() => Parser.parse("()")).toThrow("Expected name, got ')'");
     });
 
     it("Expression starting with a number", () => {
-      expect(() => Parser.parse("(1 2 3 4)")).toThrow();
+      expect(() => Parser.parse("(1 2 3 4)")).toThrow("Expected name, got '1'");
     });
 
     it("Expression starting with a string", () => {
-      expect(() => Parser.parse('("foo" 2 3 4)')).toThrow();
+      expect(() => Parser.parse('("foo" 2 3 4)')).toThrow("Expected name, got '\"foo\"'");
     });
 
     it("Expression starting with a keyword", () => {
-      expect(() => Parser.parse('(true 2 3 4)')).toThrow();
+      expect(() => Parser.parse('(true 2 3 4)')).toThrow("Expected name, got 'true'");
     });
   });
 
@@ -71,13 +75,13 @@ describe("Parser", () => {
     });
 
     it("Non-boolean results", () => {
-      expect(() => Parser.parse('(and (> x 0) "foo")').evaluate({ a: 1 })).toThrow();
-      expect(() => Parser.parse('(or (> x 0) "foo")').evaluate({ a: 1 })).toThrow();
-      expect(() => Parser.parse('(not "foo")').evaluate({ a: 1 })).toThrow();
+      expect(() => Parser.parse('(and (> x 0) "foo")').evaluate({ a: 1 })).toThrow("Logical expressions must evaluate to boolean");
+      expect(() => Parser.parse('(or (> x 0) "foo")').evaluate({ a: 1 })).toThrow("Logical expressions must evaluate to boolean");
+      expect(() => Parser.parse('(not "foo")').evaluate({ a: 1 })).toThrow("Logical expressions must evaluate to boolean");
     });
 
     it("Comparing more than two values", () => {
-      expect(() => Parser.parse('(> a 0 1)').evaluate({ a: 1 })).toThrow();
+      expect(() => Parser.parse('(> a 0 1)').evaluate({ a: 1 })).toThrow("Comparisons should have only 2 terms");
     });
 
     it("Method call", () => {
