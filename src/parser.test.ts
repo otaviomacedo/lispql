@@ -98,12 +98,12 @@ describe("Parser", () => {
       const expression = Parser.parse(`
         (not
           (or
-          (and
-            (startsWith name "E")
-            (startsWith surname "M")
-            (= gender "K"))
-          (endsWith email ".com")
-          (not (= age 32))))       
+            (and
+              (startsWith name "E")
+              (startsWith surname "M")
+              (= gender "K"))
+            (endsWith email ".com")
+            (not (= age 32))))       
       `);
 
       const user = {
